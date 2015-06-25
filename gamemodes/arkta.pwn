@@ -1,4 +1,5 @@
 #include <a_samp>
+#include <a_mysql>
 
 #define func%0(%1) forward public%0(%1); public%0(%1)
 
@@ -20,7 +21,7 @@ main()
 
 public OnGameModeInit()
 {
-	for(new i; i < sizeof(PlayerData); i++) reset_PlayerData(i);
+	//for(new i; i < sizeof(PlayerData); i++) reset_PlayerData(i);
 	SetGameModeText(GAMEMODE_TEXT);
 	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	return 1;
@@ -41,11 +42,15 @@ public OnPlayerRequestClass(playerid, classid)
 
 public OnPlayerConnect(playerid)
 {
+	reset_PlayerData(playerid);
+	new playername[MAX_PLAYER_NAME + 1];
+	GetPlayerName(playerid, playername, sizeof(playername));
 	return 1;
 }
 
 public OnPlayerDisconnect(playerid, reason)
 {
+	reset_PlayerData(playerid);
 	return 1;
 }
 
