@@ -1,6 +1,15 @@
 #include <a_samp>
 
+#define func%0(%1) forward public%0(%1); public%0(%1)
+
 #define GAMEMODE_NAME   "Arkta Roleplay"
+#define GAMEMODE_TEXT   "Arkta RP v0.1"
+
+enum _playerdata {
+	p_ID,
+	p_Name[MAX_PLAYER_NAME + 1]
+};
+new PlayerData[MAX_PLAYERS][_playerdata];
 
 main()
 {
@@ -11,8 +20,8 @@ main()
 
 public OnGameModeInit()
 {
-	// Don't use these lines if it's a filterscript
-	SetGameModeText("Blank Script");
+	for(new i; i < sizeof(PlayerData); i++) reset_PlayerData(i);
+	SetGameModeText(GAMEMODE_TEXT);
 	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	return 1;
 }
@@ -208,4 +217,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 {
 	return 1;
+}
+
+func reset_PlayerData(playerid)
+{
+	new x[_playerdata];
+	PlayerData[playerid] = x;
 }
