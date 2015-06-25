@@ -6,11 +6,18 @@
 #define GAMEMODE_NAME   "Arkta Roleplay"
 #define GAMEMODE_TEXT   "Arkta RP v0.1"
 
+#define MYSQL_HOST  	"127.0.0.1"
+#define MYSQL_USER  	"root"
+#define MYSQL_DATABASE  "samp"
+#define MYSQL_PASSWORD  ""
+
 enum _playerdata {
 	p_ID,
 	p_Name[MAX_PLAYER_NAME + 1]
 };
 new PlayerData[MAX_PLAYERS][_playerdata];
+
+new MySQL;
 
 main()
 {
@@ -21,14 +28,14 @@ main()
 
 public OnGameModeInit()
 {
-	//for(new i; i < sizeof(PlayerData); i++) reset_PlayerData(i);
 	SetGameModeText(GAMEMODE_TEXT);
-	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
+    MySQL = mysql_connect(MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE, MYSQL_PASSWORD);
 	return 1;
 }
 
 public OnGameModeExit()
 {
+    mysql_close(MySQL);
 	return 1;
 }
 
