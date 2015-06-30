@@ -1,35 +1,59 @@
 #include <a_samp>
 #include <a_mysql>
+#include <colors>
+#include <easyDialog>
 
-#define func%0(%1) forward public%0(%1); public%0(%1)
+#define function%0(%1) forward public%0(%1); public%0(%1)
 
 #define GAMEMODE_NAME   "Arkta Roleplay"
 #define GAMEMODE_TEXT   "Arkta RP v0.1"
+#define SERVER_MAP		"San Andreas"
+#define SERVER_LANGUAGE "English"
 
 #define MYSQL_HOST  	"127.0.0.1"
 #define MYSQL_USER  	"root"
 #define MYSQL_DATABASE  "samp"
 #define MYSQL_PASSWORD  ""
 
+#define DB_USERS    "users"
+
 enum _playerdata {
 	p_ID,
-	p_Name[MAX_PLAYER_NAME + 1]
+	p_Name[MAX_PLAYER_NAME + 1],
+	p_Password[128 + 1],
+	bool:p_Registered,
+	p_Skin,
+	p_Raha
 };
 new PlayerData[MAX_PLAYERS][_playerdata];
 
+new bool:p_Logged[MAX_PLAYERS];
+
 new MySQL;
 
-main()
-{
-	print("\n----------------------------------");
-	print(GAMEMODE_NAME);
-	print("----------------------------------\n");
-}
+main() {}
 
 public OnGameModeInit()
 {
+    print(GAMEMODE_NAME);
+    SendRconCommand("mapname "SERVER_MAP);
+	SendRconCommand("language "SERVER_LANGUAGE);
 	SetGameModeText(GAMEMODE_TEXT);
+	DisableInteriorEnterExits();
+   	ShowPlayerMarkers(1);
+	ShowNameTags(1);
+	EnableStuntBonusForAll(0);
+	SetNameTagDrawDistance(25);
+    ManualVehicleEngineAndLights();
+    SetGravity(0.01);
     MySQL = mysql_connect(MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE, MYSQL_PASSWORD);
+    if(mysql_errno(MySQL) != 0)
+	{
+		print("MySQL connection is dead!");
+        SendRconCommand("exit"); // Shutting server down because of MySQL connection failure!
+        return 1;
+	}
+	printf("MySQL connection is ready.");
 	return 1;
 }
 
@@ -75,8 +99,115 @@ public OnGameModeExit()
 #include "arkta/callbacks/OnDialogResponse.pwn"
 #include "arkta/callbacks/OnPlayerClickPlayer.pwn"
 
-func reset_PlayerData(playerid)
+public OnDialogPerformed(playerid, dialog[], response, success)
+{
+    return 1;
+}
+
+Dialog:dialog_login(playerid, response, listitem, inputtext[])
+{
+    if (response)
+    {
+		if (!strcmp(inputtext, PlayerData[playerid][p_Password]))
+		{
+		    // Password is correct!
+		    p_Logged[playerid] = true;
+		}
+		else
+		{
+		    // Incorrect password!
+		    ShowPlayerLogin(playerid, true);
+		}
+    }
+    else Kick(playerid);
+    return 1;
+}
+
+Dialog:dialog_register(playerid, response, listitem, inputtext[])
+{
+    if (response)
+    {
+		//stuff...
+    }
+    else Kick(playerid);
+    return 1;
+}
+
+function KickTimer(playerid)
+{
+    Kick(playerid);
+	return 1;
+}
+
+stock _Kick(playerid)
+{
+	SetTimerEx("KickTimer", 100, false, "i", playerid);
+	return 1;
+}
+
+#if defined _ALS_Kick
+	#undef Kick
+#else
+	#define _ALS_Kick
+#endif
+#define Kick _Kick
+
+function reset_PlayerData(playerid)
 {
 	new x[_playerdata];
 	PlayerData[playerid] = x;
+}
+
+function check_player(playerid)
+{
+	new playername[MAX_PLAYER_NAME + 1], qstring[128];
+	GetPlayerName(playerid, playername, sizeof(playername));
+	mysql_format(MySQL, qstring, sizeof(qstring), "SELECT count(id) FROM "DB_USERS" WHERE `username` = '%e'", playername);
+	new Cache:result = mysql_query(MySQL, qstring);
+	new rows = cache_num_rows();
+	cache_delete(result);
+	if (rows)
+	{
+		return 1; // Player record exists.
+	}
+	return 0; // Player record does not exist.
+}
+
+function save_player(playerid)
+{
+	if(check_player(playerid))
+	{
+		//
+	}
+	return 0; // Player record does not exist.
+}
+
+function OnPlayerDataCheck(playerid)
+{
+	new
+		rows,
+		fields
+	;
+	cache_get_data(rows, fields, MySQL);
+	if(rows)
+	{
+	    PlayerData[playerid][p_ID] = cache_get_field_content_int(0, "id");
+	    cache_get_field_content(0, "password", PlayerData[playerid][p_Password], MySQL, PlayerData[playerid][p_Password]);
+		ShowPlayerLogin(playerid);
+	}
+	else
+	{
+	    ShowPlayerRegister(playerid);
+	}
+}
+
+stock ShowPlayerLogin(playerid, bool:wrong = false)
+{
+	if(wrong == true) return Dialog_Show(playerid, dialog_login, DIALOG_STYLE_PASSWORD, "Login", "Wrong password!\nEnter again your password below:", "Login", "Cancel");
+	return Dialog_Show(playerid, dialog_login, DIALOG_STYLE_PASSWORD, "Login", "Enter your password below:", "Login", "Cancel");
+}
+
+stock ShowPlayerRegister(playerid)
+{
+	return Dialog_Show(playerid, dialog_register, DIALOG_STYLE_PASSWORD, "Login", "Enter your new password below:", "Register", "Cancel");
 }
