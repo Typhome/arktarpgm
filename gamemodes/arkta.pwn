@@ -5,6 +5,8 @@
 #include <easyDialog>
 
 #define function%0(%1) forward public%0(%1); public%0(%1)
+#define strcpy(%0,%1,%2) \
+    strcat((%0[0] = '\0', %0), %1, %2)
 
 #define GAMEMODE_NAME   "Arkta Roleplay"
 #define GAMEMODE_TEXT   "Arkta RP v0.1"
@@ -24,7 +26,11 @@ enum _playerdata {
 	p_Password[128 + 1],
 	bool:p_Registered,
 	p_Skin,
-	p_Raha
+	p_Money,
+	Float:p_Pos[3],
+	Float:p_Angle,
+	p_Guns[13],
+	p_Ammos[13]
 };
 new PlayerData[MAX_PLAYERS][_playerdata];
 
@@ -55,6 +61,7 @@ public OnGameModeInit()
         return 1;
 	}
 	printf("MySQL connection is ready.");
+	mysql_log(LOG_ALL, LOG_TYPE_HTML);
 	return 1;
 }
 
@@ -113,11 +120,14 @@ Dialog:dialog_login(playerid, response, listitem, inputtext[])
 		{
 		    // Password is correct!
 		    p_Logged[playerid] = true;
+		    new qstring[128];
+			mysql_format(MySQL, qstring, sizeof(qstring), "SELECT * FROM "DB_USERS" WHERE `username` = '%e' LIMIT 1", PlayerData[playerid][p_Name]);
+			mysql_tquery(MySQL, qstring, "OnPlayerDataLoad", "i", playerid);
 		}
 		else
 		{
 		    // Incorrect password!
-		    ShowPlayerLogin(playerid, true);
+		    return ShowPlayerLogin(playerid, true);
 		}
     }
     else Kick(playerid);
@@ -209,6 +219,39 @@ function OnPlayerDataCheck(playerid)
 	{
 	    ShowPlayerRegister(playerid);
 	}
+	return 1;
+}
+
+function OnPlayerDataLoad(playerid)
+{
+    new
+		rows,
+		fields
+	;
+	cache_get_data(rows, fields, MySQL);
+	if(rows)
+	{
+	    SendClientMessage(playerid, -1, "Loading your data...");
+	
+	    PlayerData[playerid][p_ID] = cache_get_field_content_int(0, "id");
+	
+		PlayerData[playerid][p_Pos][0] = cache_get_field_content_float(0, "pos_X");
+		PlayerData[playerid][p_Pos][1] = cache_get_field_content_float(0, "pos_Y");
+		PlayerData[playerid][p_Pos][2] = cache_get_field_content_float(0, "pos_Z");
+		PlayerData[playerid][p_Angle] = cache_get_field_content_float(0, "angle");
+		
+		PlayerData[playerid][p_Money] = cache_get_field_content_int(0, "money");
+		PlayerData[playerid][p_Skin] = cache_get_field_content_int(0, "skin");
+		
+		SendClientMessage(playerid, -1, "Your data is loaded.");
+		
+		player_spawn(playerid);
+  	}
+	else
+	{
+	    Kick(playerid);
+	}
+	return 1;
 }
 
 stock ShowPlayerLogin(playerid, bool:wrong = false)
@@ -220,4 +263,26 @@ stock ShowPlayerLogin(playerid, bool:wrong = false)
 stock ShowPlayerRegister(playerid)
 {
 	return Dialog_Show(playerid, dialog_register, DIALOG_STYLE_PASSWORD, "Login", "Enter your new password below:", "Register", "Cancel");
+}
+
+function player_unfreeze(playerid)
+{
+	return TogglePlayerControllable(playerid, true);
+}
+
+function player_freeze(playerid)
+{
+    return TogglePlayerControllable(playerid, false);
+}
+
+function player_spawn(playerid)
+{
+	// stuff
+    TogglePlayerSpectating(playerid, false);
+    return 1;
+}
+
+function player_clearchat(playerid)
+{
+	for(new i; i < 20; i++) SendClientMessage(playerid, -1, " ");
 }

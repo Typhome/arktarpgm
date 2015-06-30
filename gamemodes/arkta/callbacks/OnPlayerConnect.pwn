@@ -1,11 +1,14 @@
 public OnPlayerConnect(playerid)
 {
+	TogglePlayerSpectating(playerid, true);
 	reset_PlayerData(playerid);
 	p_Logged[playerid] = false;
-	new playername[MAX_PLAYER_NAME + 1];
+	new playername[MAX_PLAYER_NAME];
 	GetPlayerName(playerid, playername, sizeof(playername));
+	strcpy(PlayerData[playerid][p_Name], playername, MAX_PLAYER_NAME);
+	printf("PlayerData[%d][p_Name] = %s", playerid, PlayerData[playerid][p_Name]);
 	
-	printf("PlayerData[%d][p_Registered] = %l", playerid, ( check_player(playerid) ? true : false ));
+	printf("PlayerData[%d][p_Registered] = %d", playerid, ( check_player(playerid) ? true : false ));
 	
 	PlayerData[playerid][p_Registered] = ( check_player(playerid) ? true : false );
 
