@@ -1,4 +1,5 @@
 #include <a_samp>
+#include <string>
 #include <a_mysql>
 #include <colors>
 #include <easyDialog>
@@ -127,8 +128,17 @@ Dialog:dialog_register(playerid, response, listitem, inputtext[])
 {
     if (response)
     {
-		//stuff...
-    }
+		if (!strlen(inputtext))
+		{
+			strmid(PlayerData[playerid][p_Password], inputtext, 0, strlen(inputtext), 128 + 1);
+			PlayerData[playerid][p_Registered] = true;
+			return ShowPlayerLogin(playerid);
+		}
+		else
+		{
+			return ShowPlayerRegister(playerid);
+		}
+	}
     else Kick(playerid);
     return 1;
 }
@@ -192,7 +202,7 @@ function OnPlayerDataCheck(playerid)
 	if(rows)
 	{
 	    PlayerData[playerid][p_ID] = cache_get_field_content_int(0, "id");
-	    cache_get_field_content(0, "password", PlayerData[playerid][p_Password], MySQL, PlayerData[playerid][p_Password]);
+	    cache_get_field_content(0, "password", PlayerData[playerid][p_Password], MySQL, 128 + 1);
 		ShowPlayerLogin(playerid);
 	}
 	else
